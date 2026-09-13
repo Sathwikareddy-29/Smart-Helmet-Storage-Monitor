@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Helmet Storage Monitor</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f6f8;
+            text-align: center;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #222;
+        }
+
+        .card {
+            background-color: white;
+            width: 500px;
+            margin: 30px auto;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+
+        .status {
+            font-size: 28px;
+            font-weight: bold;
+            margin: 20px;
+        }
+
+        .present {
+            color: green;
+        }
+
+        .missing {
+            color: red;
+        }
+
+        .unknown {
+            color: orange;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #eeeeee;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h1>Smart Helmet Storage Monitor</h1>
+
+    <div class="card">
+        <h2>Storage Slot 1</h2>
+
+        <p>Helmet Status:</p>
+
+        <div id="status" class="status unknown">
+            Loading...
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Status History</h2>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Slot</th>
+                    <th>Status</th>
+                    <th>Time</th>
+                </tr>
+            </thead>
+
+            <tbody id="history">
+                <tr>
+                    <td colspan="3">Loading...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+
+        async function getStatus() {
+            try {
+                const response = await fetch("http://localhost:3000/api/status");
+                const data = await response.json();
+
+                const statusElement = document.getElementById("status");
+
+                statusElement.textContent = data.helmet;
+                statusElement.className = "status";
+
+                if (data.helmet === "PRESENT") {
+                    statusElement.classList.add("present");
+                } 
+                else if (data.helmet === "MISSING") {
+                    statusElement.classList.add("missing");
+                } 
+                else {
+                    statusElement.classList.add("unknown");
+                }
+
+            } catch (error) {
+                document.getElementById("status").textContent = "Backend Offline";
+            }
+        }
+
+        async function getHistory() {
+            try {
+                const response = await fetch("http://localhost:3000/api/history");
+                const data = await response.json();
+
+                const historyTable = document.getElementById("history");
+
+                historyTable.innerHTML = "";
+
+                data.slice(0, 10).forEach(record => {
+
+                    const row = document.createElement("tr");
+
+                    row.innerHTML = `
+                        <td>${record.slot}</td>
+                        <td>${record.status}</td>
+                        <td>${new Date(record.recorded_at).toLocaleString()}</td>
+                    `;
+
+                    historyTable.appendChild(row);
+                });
+
+            } catch (error) {
+                document.getElementById("history").innerHTML =
+                    "<tr><td colspan='3'>Unable to load history</td></tr>";
+            }
+        }
+
+        getStatus();
+        getHistory();
+
+        setInterval(getStatus, 3000);
+        setInterval(getHistory, 5000);
+
+    </script>
+
+</body>
+</html>
